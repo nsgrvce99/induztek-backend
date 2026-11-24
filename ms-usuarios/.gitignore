@@ -1,0 +1,30 @@
+
+# Maven
+**/target/
+*.class
+*.jar
+!**/.mvn/wrapper/maven-wrapper.jar
+
+# IDE
+**/.vscode/
+**/.idea/
+*.iml
+**/.settings/
+**/.classpath
+**/.project
+
+# Credenciales y seguridad
+.env
+.env.*
+!.env.example
+*.jks
+*.keystore
+*.pem
+*.key
+
+# Logs
+*.log
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
