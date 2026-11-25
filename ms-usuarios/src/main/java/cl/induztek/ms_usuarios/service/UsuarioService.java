@@ -1,3 +1,4 @@
+
 package cl.induztek.ms_usuarios.service;
 
 import cl.induztek.ms_usuarios.dto.*;
@@ -18,6 +19,7 @@ import java.util.Locale;
 import java.util.UUID;
 import java.security.SecureRandom;
 import java.util.Base64;
+import java.nio.charset.StandardCharsets;
 
 @Service
 @Transactional
@@ -28,8 +30,6 @@ public class UsuarioService {
     private final PasswordEncoder passwordEncoder;
 
     private static final long ROL_CLIENTE = 4L;
-
-    // Identifica una contraseña que debe cambiarse.
     private static final String TEMPORAL = "{temporal}";
 
     public UsuarioService(
@@ -120,9 +120,14 @@ public class UsuarioService {
         return correo.trim().toLowerCase(Locale.ROOT);
     }
 
+    // ==========================================
+    // VALIDAR ROLES
+    // ==========================================
+
     private void validarPersonal(Long rolId) {
 
         if (rolId == null || rolId < 1 || rolId > 3) {
+
             throw new ResponseStatusException(
                 HttpStatus.BAD_REQUEST,
                 "El rol debe corresponder al personal interno"
@@ -133,12 +138,17 @@ public class UsuarioService {
     private void validarCliente(Usuario usuario) {
 
         if (usuario.getRol().getId() != ROL_CLIENTE) {
+
             throw new ResponseStatusException(
                 HttpStatus.BAD_REQUEST,
                 "El usuario no corresponde a un cliente"
             );
         }
     }
+
+    // ==========================================
+    // VALIDAR PAGINACION
+    // ==========================================
 
     private void validarPaginacion(
         int limit,
@@ -154,6 +164,30 @@ public class UsuarioService {
             );
         }
     }
+
+    // ==========================================
+    // VALIDAR LIMITE DE BCRYPT
+    // ==========================================
+
+    private void validarLongitudContrasena(
+        String contrasena
+    ) {
+
+        if (contrasena == null ||
+            contrasena.getBytes(
+                StandardCharsets.UTF_8
+            ).length > 72) {
+
+            throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "La contraseña no puede superar los 72 bytes"
+            );
+        }
+    }
+
+    // ==========================================
+    // GENERAR CONTRASENA TEMPORAL
+    // ==========================================
 
     private String generarContrasenaTemporal() {
 
@@ -237,7 +271,8 @@ public class UsuarioService {
             generarContrasenaTemporal();
 
         usuario.setContrasena(
-            TEMPORAL + passwordEncoder.encode(claveTemporal)
+            TEMPORAL +
+            passwordEncoder.encode(claveTemporal)
         );
 
         usuario.setActivo(true);
@@ -276,7 +311,10 @@ public class UsuarioService {
 
         return usuarioRepository
                 .buscarClientes(
-                    filtro, filtroRut, limit, offset
+                    filtro,
+                    filtroRut,
+                    limit,
+                    offset
                 )
                 .stream()
                 .map(UsuarioResponse::desdeEntidad)
@@ -308,7 +346,10 @@ public class UsuarioService {
 
         return usuarioRepository
                 .buscarPersonal(
-                    filtro, filtroRut, limit, offset
+                    filtro,
+                    filtroRut,
+                    limit,
+                    offset
                 )
                 .stream()
                 .map(UsuarioResponse::desdeEntidad)
@@ -402,6 +443,10 @@ public class UsuarioService {
             );
         }
 
+        validarLongitudContrasena(
+            request.contrasena()
+        );
+
         usuario.setContrasena(
             TEMPORAL + passwordEncoder.encode(
                 request.contrasena()
@@ -434,7 +479,7 @@ public class UsuarioService {
     }
 
     // ==========================================
-    // CAMBIAR CONTRASEÑA
+    // CAMBIAR CONTRASENA
     // ==========================================
 
     public void cambiarContrasena(
@@ -444,15 +489,37 @@ public class UsuarioService {
 
         Usuario usuario = obtenerUsuario(id);
 
+        // Verificar que la cuenta esté activa.
+
+        if (!usuario.isActivo()) {
+
+            throw new ResponseStatusException(
+                HttpStatus.FORBIDDEN,
+                "El usuario se encuentra inactivo"
+            );
+        }
+
+        // Validar el límite de BCrypt.
+
+        validarLongitudContrasena(request.actual());
+        validarLongitudContrasena(request.nueva());
+
+        // Obtener el hash almacenado.
+
         String hash = usuario.getContrasena();
+
+        // Retirar el prefijo si es temporal.
 
         if (hash.startsWith(TEMPORAL)) {
 
             hash = hash.substring(TEMPORAL.length());
         }
 
+        // Verificar contraseña actual.
+
         if (!passwordEncoder.matches(
-                request.actual(), hash)) {
+                request.actual(), hash
+        )) {
 
             throw new ResponseStatusException(
                 HttpStatus.BAD_REQUEST,
@@ -460,7 +527,11 @@ public class UsuarioService {
             );
         }
 
-        if (!request.nueva().equals(request.confirmar())) {
+        // Verificar confirmación.
+
+        if (!request.nueva().equals(
+                request.confirmar()
+        )) {
 
             throw new ResponseStatusException(
                 HttpStatus.BAD_REQUEST,
@@ -468,13 +539,20 @@ public class UsuarioService {
             );
         }
 
-        if (passwordEncoder.matches(request.nueva(), hash)) {
+        // Evitar reutilizar la contraseña actual.
+
+        if (passwordEncoder.matches(
+                request.nueva(), hash
+        )) {
 
             throw new ResponseStatusException(
                 HttpStatus.BAD_REQUEST,
                 "La nueva contraseña debe ser diferente"
             );
         }
+
+        // Guardar la nueva contraseña con BCrypt.
+        // Ya no tendrá el prefijo {temporal}.
 
         usuario.setContrasena(
             passwordEncoder.encode(request.nueva())
