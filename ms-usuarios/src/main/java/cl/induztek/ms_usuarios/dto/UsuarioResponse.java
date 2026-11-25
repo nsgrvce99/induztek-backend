@@ -14,7 +14,8 @@ public record UsuarioResponse(
     String giro,
     String telefono,
     String cargo,
-    String fotoUri
+    String fotoUri,
+    boolean archivado
 
 ) {
 
@@ -31,7 +32,8 @@ public record UsuarioResponse(
             u.getGiro(),
             u.getTelefono(),
             u.getContactoCargo(),
-            u.getFotoUri()
+            u.getFotoUri(),
+            u.isArchivado()
         );
     }
 }

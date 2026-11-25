@@ -12,4 +12,9 @@ public record ActivacionRequest(
     )
     String contrasena
 
-) {}
+) {
+    @Override
+    public String toString() {
+        return "ActivacionRequest";
+    }
+}

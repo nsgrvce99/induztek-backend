@@ -16,4 +16,9 @@ public record LoginResponse(
 
     UsuarioResponse usuario
 
-) {}
+) {
+    @Override
+    public String toString() {
+        return "LoginResponse";
+    }
+}

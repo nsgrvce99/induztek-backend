@@ -254,7 +254,7 @@ class UsuarioServiceTest {
         when(usuarioRepository.findById(100L))
             .thenReturn(Optional.of(usuario));
 
-        when(passwordEncoder.encode("Temporal!26"))
+        when(passwordEncoder.encode("Induztek2026!"))
             .thenReturn("hash_temporal");
 
         when(usuarioRepository.save(usuario))
@@ -465,29 +465,14 @@ class UsuarioServiceTest {
     // =======================================
 
     @Test
-    @DisplayName("Proteger eliminacion de cliente")
-    void protegerEliminacionCliente() {
+    @DisplayName("Archivar cliente y revocar su acceso")
+    void archivarCliente() {
+        when(usuarioRepository.findById(100L)).thenReturn(Optional.of(usuario));
 
-        when(usuarioRepository.findById(100L))
-            .thenReturn(Optional.of(usuario));
+        usuarioService.eliminarCliente(100L);
 
-        ResponseStatusException excepcion =
-            assertThrows(
-                ResponseStatusException.class,
-                () -> usuarioService.eliminarCliente(
-                    100L
-                )
-            );
-
-        assertEquals(
-            HttpStatus.CONFLICT,
-            excepcion.getStatusCode()
-        );
-
-        verify(usuarioRepository, never())
-            .delete(any(Usuario.class));
-
-        verify(usuarioRepository, never())
-            .deleteById(anyLong());
+        assertFalse(usuario.isActivo());
+        assertTrue(usuario.isArchivado());
+        verify(usuarioRepository, never()).delete(any(Usuario.class));
     }
 }

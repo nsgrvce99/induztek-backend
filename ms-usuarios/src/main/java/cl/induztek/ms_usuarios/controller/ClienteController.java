@@ -1,6 +1,9 @@
 package cl.induztek.ms_usuarios.controller;
 
 import cl.induztek.ms_usuarios.dto.*;
+import cl.induztek.comun.CoordinacionReferencias;
+import cl.induztek.comun.DependenciasProtocolos;
+import org.springframework.http.HttpHeaders;
 import cl.induztek.ms_usuarios.service.UsuarioService;
 
 import jakarta.validation.Valid;
@@ -16,10 +19,14 @@ public class ClienteController {
 
     private final UsuarioService usuarioService;
 
-    public ClienteController(
-        UsuarioService usuarioService
-    ) {
+    private final CoordinacionReferencias coordinacion;
+    private final DependenciasProtocolos dependencias;
+
+    public ClienteController(UsuarioService usuarioService, CoordinacionReferencias coordinacion,
+                             DependenciasProtocolos dependencias) {
         this.usuarioService = usuarioService;
+        this.coordinacion = coordinacion;
+        this.dependencias = dependencias;
     }
 
     @GetMapping
@@ -57,7 +64,7 @@ public class ClienteController {
     @PatchMapping("/{id}/activar")
     public UsuarioResponse activarCliente(
         @PathVariable Long id,
-        @Valid @RequestBody ActivacionRequest request
+        @Valid @RequestBody(required = false) ActivacionRequest request
     ) {
 
         return usuarioService.activarCliente(
@@ -68,9 +75,14 @@ public class ClienteController {
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void eliminarCliente(
-        @PathVariable Long id
+        @PathVariable Long id,
+        @RequestHeader(HttpHeaders.AUTHORIZATION) String autorizacion
     ) {
-
-        usuarioService.eliminarCliente(id);
+        coordinacion.ejecutar(() -> {
+            DependenciasProtocolos.verificar(() -> dependencias.clienteFormalizado(autorizacion, id),
+                    "El cliente tiene protocolos formalizados");
+            usuarioService.eliminarCliente(id);
+            return null;
+        });
     }
 }

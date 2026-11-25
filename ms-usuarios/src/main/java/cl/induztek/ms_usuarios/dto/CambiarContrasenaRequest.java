@@ -19,4 +19,9 @@ public record CambiarContrasenaRequest(
     @NotBlank(message = "Debe confirmar la contraseña")
     String confirmar
 
-) {}
+) {
+    @Override
+    public String toString() {
+        return "CambiarContrasenaRequest";
+    }
+}

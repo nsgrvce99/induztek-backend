@@ -42,7 +42,7 @@ public interface UsuarioRepository
 
     @Query(value = """
         SELECT u.* FROM usuario u
-        WHERE u.id_rol = 4
+        WHERE u.id_rol = 4 AND u.archivado = false
         AND (
             u.nombre LIKE CONCAT('%', :query, '%')
             OR u.rut LIKE CONCAT('%', :rutQuery, '%')

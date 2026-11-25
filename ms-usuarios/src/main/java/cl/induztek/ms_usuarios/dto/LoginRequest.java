@@ -13,4 +13,9 @@ public record LoginRequest(
     @Size(max = 72)
     String contrasena
 
-) {}
+) {
+    @Override
+    public String toString() {
+        return "LoginRequest";
+    }
+}

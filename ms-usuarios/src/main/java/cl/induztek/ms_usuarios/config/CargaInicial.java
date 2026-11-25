@@ -13,9 +13,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.security.SecureRandom;
-import java.util.Base64;
-import java.util.ArrayList;
+import org.springframework.core.env.Environment;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @Configuration
@@ -43,7 +42,8 @@ public class CargaInicial {
 
         CredencialesService credencialesService,
 
-        TransactionTemplate transactionTemplate
+        TransactionTemplate transactionTemplate,
+        Environment entorno
 
     ) {
 
@@ -56,7 +56,7 @@ public class CargaInicial {
                     1L,
                     "17.284.519-3",
                     "Matías Godoy Herrera",
-                    "mgodoy@induztek.ejemplo"
+                    "terreno@gmail.com"
                 ),
 
                 new UsuarioInicial(
@@ -64,7 +64,7 @@ public class CargaInicial {
                     1L,
                     "19.412.087-7",
                     "Javiera Tapia Muñoz",
-                    "jtapia@induztek.ejemplo"
+                    "terreno2@gmail.com"
                 ),
 
                 new UsuarioInicial(
@@ -72,7 +72,7 @@ public class CargaInicial {
                     2L,
                     "15.906.334-8",
                     "Andrea Contreras Silva",
-                    "acontreras@induztek.ejemplo"
+                    "ingeniero@gmail.com"
                 ),
 
                 new UsuarioInicial(
@@ -80,7 +80,7 @@ public class CargaInicial {
                     3L,
                     "13.871.905-7",
                     "Ricardo Espinoza Lagos",
-                    "respinoza@induztek.ejemplo"
+                    "jefe@gmail.com"
                 ),
 
                 new UsuarioInicial(
@@ -88,11 +88,9 @@ public class CargaInicial {
                     4L,
                     "14.226.791-8",
                     "Marcela Fuentes Rojas",
-                    "mfuentes@envpacifico.ejemplo"
+                    "cliente@gmail.com"
                 )
             );
-
-            List<String> credenciales = new ArrayList<>();
 
             transactionTemplate.executeWithoutResult(
                 status -> {
@@ -101,7 +99,7 @@ public class CargaInicial {
 
                         var existentes = jdbc.queryForList(
                             """
-                            SELECT id_usuario, correo
+                            SELECT id_usuario, correo, rut, id_rol
                             FROM usuario
                             WHERE id_usuario = ?
                             """,
@@ -115,23 +113,26 @@ public class CargaInicial {
                                     .get("correo")
                                     .toString();
 
-                            if (!correoExistente
-                                    .equalsIgnoreCase(
-                                        u.correo()
-                                    )) {
-
-                                throw new IllegalStateException(
-                                    "El ID " + u.id()
-                                    + " pertenece a otro usuario. "
-                                    + "Revise MySQL antes de continuar."
-                                );
+                            var existente = existentes.getFirst();
+                            boolean identidadCoincide = RutValidator.normalizar(u.rut()).equals(existente.get("rut"))
+                                    && ((Number) existente.get("id_rol")).longValue() == u.rolId();
+                            String correoAnterior = switch (u.id().intValue()) {
+                                case 1 -> "mgodoy@induztek.ejemplo";
+                                case 2 -> "jtapia@induztek.ejemplo";
+                                case 3 -> "acontreras@induztek.ejemplo";
+                                case 4 -> "respinoza@induztek.ejemplo";
+                                case 5 -> "mfuentes@envpacifico.ejemplo";
+                                default -> "";
+                            };
+                            if (identidadCoincide && correoExistente.equalsIgnoreCase(correoAnterior)) {
+                                jdbc.update("UPDATE usuario SET correo = ? WHERE id_usuario = ?", u.correo(), u.id());
                             }
 
                             continue;
                         }
 
                         String temporal =
-                            generarClaveTemporal();
+                            obtenerClaveTemporal(entorno, u.id());
 
                         String hash =
                             credencialesService
@@ -165,48 +166,21 @@ public class CargaInicial {
 
                             true
                         );
-
-                        credenciales.add(
-                            u.correo()
-                            + " | "
-                            + temporal
-                        );
                     }
                 }
             );
 
-            // Se muestran solo después de confirmar
-            // la transacción.
-
-            if (!credenciales.isEmpty()) {
-
-                System.out.println(
-                    "=== CREDENCIALES TEMPORALES DE DEMO ==="
-                );
-
-                credenciales.forEach(System.out::println);
-
-                System.out.println(
-                    "====================================="
-                );
-
-            } else {
-
-                System.out.println(
-                    "Usuarios iniciales ya existentes."
-                );
-            }
         };
     }
 
-    private String generarClaveTemporal() {
-
-        byte[] bytes = new byte[12];
-
-        new SecureRandom().nextBytes(bytes);
-
-        return "A!" + Base64.getUrlEncoder()
-            .withoutPadding()
-            .encodeToString(bytes);
+    private String obtenerClaveTemporal(Environment entorno, Long id) {
+        String variable = "DEMO_PASSWORD_" + id;
+        String clave = entorno.getProperty(variable);
+        if (clave == null || clave.isBlank()) return "clave";
+        if (clave.getBytes(StandardCharsets.UTF_8).length < 16
+                || clave.getBytes(StandardCharsets.UTF_8).length > 72) {
+            throw new IllegalStateException("Configura " + variable + " con una clave de 16 a 72 bytes");
+        }
+        return clave;
     }
 }

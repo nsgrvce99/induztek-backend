@@ -1,0 +1,11 @@
+
+/.env
+/.env.*
+!/.env.example
+
+# Material local de firma
+*.jks
+*.keystore
+*.p12
+*.dpapi
+keystore.properties

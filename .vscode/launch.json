@@ -1,0 +1,64 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-ApiGatewayApplication<api-gateway>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "cl.induztek.api_gateway.ApiGatewayApplication",
+            "projectName": "api-gateway",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-EurekaServerApplication<eureka-server>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "cl.induztek.eureka.EurekaServerApplication",
+            "projectName": "eureka-server",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-MsEquiposApplication<ms-equipos>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "cl.induztek.ms_equipos.MsEquiposApplication",
+            "projectName": "ms-equipos",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-MsInstrumentosApplication<ms-instrumentos>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "cl.induztek.ms_instrumentos.MsInstrumentosApplication",
+            "projectName": "ms-instrumentos",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-MsProtocolosApplication<ms-protocolos>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "cl.induztek.ms_protocolos.MsProtocolosApplication",
+            "projectName": "ms-protocolos",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-MsUsuariosApplication<ms-usuarios>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "cl.induztek.ms_usuarios.MsUsuariosApplication",
+            "projectName": "ms-usuarios",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}

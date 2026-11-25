@@ -435,6 +435,9 @@ public class UsuarioService {
 
         validarCliente(usuario);
 
+        if (usuario.isArchivado()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Cliente no encontrado");
+        }
         if (usuario.isActivo()) {
 
             throw new ResponseStatusException(
@@ -443,15 +446,7 @@ public class UsuarioService {
             );
         }
 
-        validarLongitudContrasena(
-            request.contrasena()
-        );
-
-        usuario.setContrasena(
-            TEMPORAL + passwordEncoder.encode(
-                request.contrasena()
-            )
-        );
+        usuario.setContrasena(TEMPORAL + passwordEncoder.encode("Induztek2026!"));
 
         usuario.setActivo(true);
 
@@ -471,6 +466,7 @@ public class UsuarioService {
 
         Usuario usuario = obtenerUsuario(id);
 
+        cl.induztek.ms_usuarios.validation.FotoPerfilValidator.validar(request.fotoUri());
         usuario.setFotoUri(request.fotoUri());
 
         return UsuarioResponse.desdeEntidad(
@@ -571,11 +567,8 @@ public class UsuarioService {
 
         validarCliente(usuario);
 
-        throw new ResponseStatusException(
-            HttpStatus.CONFLICT,
-            "Eliminación pendiente de verificar equipos, "
-                + "instalaciones y protocolos asociados"
-        );
+        usuario.setActivo(false);
+        usuario.setArchivado(true);
     }
 
     // ==========================================
